@@ -118,6 +118,8 @@ for (simu in c(1:nrow(Simulations))){
   }
 }
 
+Species_all$Hill_Shannon <- exp(Species_all$Shannon)
+
 save(Abundances_all, file = here::here("outputs", "Comparison", "Abundances_all.RData"))
 save(Species_all, file = here::here("outputs", "Comparison", "Species_all.RData"))
 
@@ -345,7 +347,7 @@ save(IV_all, file = here::here("outputs", "Comparison", "IV_all.RData"))
 ## PLOTS ##
 
 source("~/Code/coexist/_R/call_libraries.R")
-source("~/Code/coexist/_R/Math_functions.R")
+source("~/Code/coexist/_R/math_functions.R")
 
 fig_width <- 35
 
@@ -393,7 +395,7 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
     ggplot2::ggsave(p, filename=here::here("outputs", "Comparison", glue::glue("IV_nb_axes_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
     
-    # Species richness and Shannon diversity index #
+    # Species richness and Hill-Shannon diversity index #
     
     data_figure <- Species_all[which(Species_all$Mortality==mortality&Species_all$Fecundity==fecundity),]
     
@@ -403,11 +405,11 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
     data_figure <- data_figure%>%
       dplyr::group_by(Seed, Seed_r, Nb_obs)%>%
       dplyr::mutate(Delta_SR = N_sp - dplyr::lag(N_sp),
-                    Delta_Shannon = Shannon - dplyr::lag(Shannon),
+                    Delta_Hill_Shannon = Hill_Shannon - dplyr::lag(Hill_Shannon),
                     ID_delta=Nb_obs)%>%
       dplyr::filter(is.na(Delta_SR)==FALSE)%>%
       dplyr::ungroup()%>%
-      dplyr::select(Seed, Seed_r, ID_delta, Delta_SR, Delta_Shannon)
+      dplyr::select(Seed, Seed_r, ID_delta, Delta_SR, Delta_Hill_Shannon)
     
     p5 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(ID_delta), y=Delta_SR))+
       ggplot2::geom_hline(yintercept=0, colour="grey60", linetype='dashed')+
@@ -423,18 +425,18 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
     ggplot2::ggsave(p5, filename=here::here("outputs", "Comparison", glue::glue("Delta_species_richness_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
     
-    p6 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(ID_delta), y=Delta_Shannon))+
+    p6 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(ID_delta), y=Delta_Hill_Shannon))+
       ggplot2::geom_hline(yintercept=0, colour="grey60", linetype='dashed')+
       ggplot2::geom_jitter(ggplot2::aes(colour=as.factor(Seed)), alpha=0.6, height=0, width=0.3, shape=16)+
       ggplot2::geom_boxplot(alpha=0.6, ggplot2::aes(group=ID_delta))+
       ggplot2::scale_colour_viridis_d()+
       ggplot2::labs(x = expression(paste("Number of observed dimensions ( ~ ", frac(sIV,uIV), " )")),
-                    y = expression(paste(Delta, " Shannon index")))+
+                    y = expression(paste(Delta, " Hill-Shannon index")))+
       ggplot2::theme(text = ggplot2::element_text(size = 16),
                      axis.text = ggplot2::element_text(size=14, colour = "grey20"),
                      legend.position = "none")
     
-    ggplot2::ggsave(p6, filename=here::here("outputs", "Comparison", glue::glue("Delta_Shannon_{mortality}_{fecundity}.png")),
+    ggplot2::ggsave(p6, filename=here::here("outputs", "Comparison", glue::glue("Delta_Hill_Shannon_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
     
     #without deltas
@@ -465,21 +467,21 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
     ggplot2::ggsave(p1, filename=here::here("outputs", "Comparison", glue::glue("Species_richness_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
     
-    p2 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(Nb_obs), y=Shannon))+
+    p2 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(Nb_obs), y=Hill_Shannon))+
       ggplot2::geom_jitter(ggplot2::aes(colour=as.factor(Seed)), alpha=0.6, height=0, width=0.3, shape=16)+
       ggplot2::scale_colour_viridis_d()+
       ggnewscale::new_scale("colour")+
       ggplot2::geom_boxplot(alpha=0.6, ggplot2::aes(colour=as.factor(Boxplot_colour)))+
       ggplot2::scale_colour_manual(values=c("black", "darkred"))+
       ggplot2::labs(x = expression(paste("Number of observed dimensions ( ~ ", frac(sIV,uIV), " )")),
-                    y = "Shannon index with uIV")+
+                    y = "Hill-Shannon index with uIV")+
       ggplot2::theme(text = ggplot2::element_text(size = 16),
                      axis.text = ggplot2::element_text(size=14),
                      axis.text.x = ggplot2::element_text(colour = color_text),
                      axis.text.y = ggplot2::element_text(colour = "grey20"),
                      legend.position = "none")
     
-    ggplot2::ggsave(p2, filename=here::here("outputs", "Comparison", glue::glue("Shannon_{mortality}_{fecundity}.png")),
+    ggplot2::ggsave(p2, filename=here::here("outputs", "Comparison", glue::glue("Hill_Shannon_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
     
     # Percentage similarity #
@@ -621,7 +623,7 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
                                                    t = 0,
                                                    b = 0.5))
     
-    arrange_SR_Shannon <- ggpubr::ggarrange(p1, p2, p5, p6,
+    arrange_SR_Hill_Shannon <- ggpubr::ggarrange(p1, p2, p5, p6,
                                             nrow=2, ncol=2, align = "v",
                                             labels=c("A", "B", "C", "D"))
     arrange_PS_Perf <- ggpubr::ggarrange(p3, p4, p7, p8,
@@ -629,7 +631,7 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
                                          labels=c("A", "B", "C", "D"))
     arrange_arrow <- ggpubr::ggarrange(plot_level_explanation, plot_level_explanation,
                                        nrow=1, ncol=2, align="v")
-    arrange_results_1 <- ggpubr::ggarrange(arrange_SR_Shannon, arrange_arrow, nrow=2, ncol=1, heights=c(15, 1))
+    arrange_results_1 <- ggpubr::ggarrange(arrange_SR_Hill_Shannon, arrange_arrow, nrow=2, ncol=1, heights=c(15, 1))
     arrange_results_2 <- ggpubr::ggarrange(arrange_PS_Perf, arrange_arrow, nrow=2, ncol=1, heights=c(15, 1))
     ggplot2::ggsave(arrange_results_1, filename=here::here("outputs", "Comparison", glue::glue("Results_1_{mortality}_{fecundity}.png")),
                     width=40, height=30, units="cm", dpi=300)
@@ -641,7 +643,7 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
     arrange_b <- ggpubr::ggarrange(plot_level_explanation, plot_level_explanation, plot_level_explanation, plot_level_explanation,
                                    nrow=1, ncol=4, align="v")
     final_plot <- ggpubr::ggarrange(arrange_a, arrange_b, nrow=2, ncol=1, heights=c(15, 1))
-    
+
     ggplot2::ggsave(final_plot, filename=here::here("outputs", "Comparison", glue::glue("Results_all_{mortality}_{fecundity}.png")),
                     width=50, height=50/2, units="cm", dpi=300)
     
@@ -1160,15 +1162,14 @@ p1 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(Nb_obs), y=N_sp
                  axis.text.y = ggplot2::element_text(colour = "grey20"),
                  legend.position = "none")
 
-
-p2 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(Nb_obs), y=Shannon))+
+p2 <- ggplot2::ggplot(data=data_figure, ggplot2::aes(x=as.factor(Nb_obs), y=Hill_Shannon))+
   ggplot2::geom_jitter(ggplot2::aes(colour=as.factor(Seed)), alpha=0.6, height=0, width=0.3, shape=16)+
   ggplot2::scale_colour_viridis_d()+
   ggnewscale::new_scale("colour")+
   ggplot2::geom_boxplot(alpha=0.6, ggplot2::aes(colour=as.factor(Boxplot_colour)))+
   ggplot2::scale_colour_manual(values=c("black", "darkred"))+
   ggplot2::labs(x = "Number of observed dimensions",
-                y = "Shannon index without uIV")+
+                y = "Hill-Shannon index without uIV")+
   ggplot2::theme(text = ggplot2::element_text(size = 16),
                  axis.text = ggplot2::element_text(size=14),
                  axis.text.x = ggplot2::element_text(colour = color_text),
@@ -1201,10 +1202,10 @@ p <- ggpubr::ggarrange(p1, p2,
 arrange_arrow <- ggpubr::ggarrange(plot_level_explanation, plot_level_explanation,
                                    nrow=1, ncol=2, align="v")
 
-p_S_SR_Shannon <- ggpubr::ggarrange(p, arrange_arrow,
+p_S_SR_Hill_Shannon <- ggpubr::ggarrange(p, arrange_arrow,
                                     nrow=2, ncol=1, heights=c(10,1))
 
-ggplot2::ggsave(p_S_SR_Shannon, filename=here::here("outputs", "Comparison", glue::glue("Results_1_IK_without_uIV_{mortality}_{fecundity}.png")),
+ggplot2::ggsave(p_S_SR_Hill_Shannon, filename=here::here("outputs", "Comparison", glue::glue("Results_1_IK_without_uIV_{mortality}_{fecundity}.png")),
                 width=fig_width, height=fig_width/2, units="cm", dpi=300)
 
 
