@@ -389,8 +389,8 @@ for (mortality in c("fixed", "prop", "stocha", "stocha_basal")){
       ggplot2::labs(x = "Number of observed dimensions",
                     y = "Observed uIV")+
       ggplot2::scale_x_discrete(labels=c(0:n_axes))+
-      ggplot2::theme(text = ggplot2::element_text(size = 20), legend.position = "none")+
-      ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * 1 / 1 , name = "Proportion of variance \n explained by the dimensions"))
+      ggplot2::scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * 1 / 1 , name = "Proportion of variance \n explained by the dimensions"))+
+      ggplot2::theme(text = ggplot2::element_text(size = 20), legend.position = "none", axis.title.y.right=ggplot2::element_text(color="deeppink3"))
     
     ggplot2::ggsave(p, filename=here::here("outputs", "Comparison", glue::glue("IV_nb_axes_{mortality}_{fecundity}.png")),
                     width=fig_width, height=fig_width/2, units="cm", dpi=300)
@@ -1268,3 +1268,64 @@ p_S_PS_Perf <- ggpubr::ggarrange(p, arrange_arrow,
 
 ggplot2::ggsave(p_S_PS_Perf, filename=here::here("outputs", "Comparison", glue::glue("Results_2_IK_without_uIV_{mortality}_{fecundity}.png")),
                 width=fig_width, height=fig_width/2, units="cm", dpi=300)
+
+## Environment and species distribution ##
+
+mortality <- "prop"
+fecundity <- "abund"
+seed_example <- 1
+seed_r_example <- 1
+
+load(here::here("outputs", "outputs_cluster", glue::glue("Perf_know_0_{mortality}_{fecundity}_{seed_example}_{seed_r_example}_community_start.RData")))
+community_start <- community
+load(here::here("outputs", "outputs_cluster", glue::glue("Perf_know_0_{mortality}_{fecundity}_{seed_example}_{seed_r_example}_community_end.RData")))
+load(here::here("outputs", "outputs_cluster", glue::glue("Perf_know_0_{mortality}_{fecundity}_{seed_example}_{seed_r_example}_sites.RData")))
+nsite_side <- sqrt(nrow(sites))
+
+# Function to rescale between 0 and 255 for RGB plots
+range_0_255 <- function(x, newMax=255, newMin=0){
+  (x - min(x))/(max(x)-min(x)) * (newMax - newMin) + newMin }
+
+# Function to combine the three RGB values in a synthetic value
+entrelac <- function(r, g, b){
+  acc <- 1
+  total <- 0
+  for (i in 0:7){
+    total <- total + (bitwAnd(bitwShiftR(b, i), 1))*acc
+    acc <- acc * 2
+    total <- total + (bitwAnd(bitwShiftR(g, i), 1))*acc
+    acc <- acc * 2
+    total <- total + (bitwAnd(bitwShiftR(r, i),1))*acc
+    acc <- acc * 2
+  }
+  return (total)
+}
+
+pca_env <- prcomp(sites, scale = TRUE)
+pca_env$rotation <- -pca_env$rotation
+pca_env$x <- -pca_env$x
+env_stack <- raster::stack(
+  raster::raster(matrix(range_0_255(pca_env$x[,1]), nrow=nsite_side, ncol=nsite_side, byrow=TRUE)),
+  raster::raster(matrix(range_0_255(pca_env$x[,2]), nrow=nsite_side, ncol=nsite_side, byrow=TRUE)),
+  raster::raster(matrix(range_0_255(pca_env$x[,3]), nrow=nsite_side, ncol=nsite_side, byrow=TRUE))
+)
+raster::crs(env_stack) <- "+proj=utm +zone=1"
+class_site <- entrelac(
+  raster::values(env_stack@layers[[1]]),
+  raster::values(env_stack@layers[[2]]),
+  raster::values(env_stack@layers[[3]])
+)
+
+colourCount = nsp
+getPalette = colorRampPalette(RColorBrewer::brewer.pal(9, "Set1"))
+
+png(file=here::here("outputs", "Fig_env_sp.png"), 
+    width=fig_width, height=fig_width, units="cm", res=300)
+par(mfrow=c(2,2), bty = "n")
+raster::plot(raster::raster(community_start), main="Species - Start", zlim=c(0, nsp),
+             col=c("black", getPalette(colourCount)), legend=FALSE)
+raster::plot(raster::raster(community_end), main="Species - End", zlim=c(0, nsp),
+             col=c("black", getPalette(colourCount)), legend=FALSE)
+raster::plot(raster::raster(matrix(class_site, ncol=nsite_side, nrow=nsite_side, byrow=TRUE)),
+             main="Environment summary", col=viridisLite::viridis(255^3))
+dev.off()

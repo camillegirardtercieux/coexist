@@ -146,7 +146,8 @@ p_dist <- dist_df %>%
 ### Panel C: Approach and objectives
 
 SR_pc <- Species_all[which(Species_all$Mortality==mortality&Species_all$Fecundity==fecundity),]
-SR_pc <- SR_pc[SR_pc$Nb_obs!=n_axes,]
+#SR_pc <- SR_pc[SR_pc$Nb_obs!=n_axes,]
+SR_pc <- SR_pc[SR_pc$Mod!="Perf_know",]
 
 x1 <- -6
 y1 <- y2 <- 102
@@ -168,8 +169,8 @@ SR_pc <- SR_pc%>%
 SR_pc$sIV <- c(((SR_pc[1:(nrow(SR_pc)-1),]$Nb_obs)/n_axes)*100, 100)
 SR_pc$uIV <- c(0)
 SR_pc[SR_pc$Mod=="Part_know",]$uIV <- rep(0, nrow(SR_pc[SR_pc$Mod=="Part_know",]))
-SR_pc[SR_pc$Mod=="Perf_know",]$uIV <- 0
 SR_pc[SR_pc$Mod=="Part_know_IV",]$uIV <- ((n_axes - SR_pc[SR_pc$Mod=="Part_know_IV",]$Nb_obs)/n_axes)*100
+#SR_pc[SR_pc$Mod=="Perf_know",]$uIV <- 0
 
 pc<-data.frame(x = SR_pc$sIV,
                y = SR_pc$uIV,
@@ -185,13 +186,77 @@ pc<-data.frame(x = SR_pc$sIV,
   geom_polygon(data = data.frame(x=c(64,69.5,69.5,64),y=c(35,35,-2,-2)), color="grey70", fill = NA) +
   geom_polygon(data = data.frame(x=c(x1,x2,x3,x4),y=c(y1,y2,y3,y4)), color="dodgerblue4", fill = NA) + # objective 1
   theme_classic()+
-  theme(legend.position = c(.7, .8),
+  theme(
+        aspect.ratio=1,
+        legend.position = c(.7, .8),
         legend.direction="horizontal",
         axis.title = element_text(size = 15),
         axis.text = element_text(size = 10),
         strip.text = element_text(size = 10))
 
+pc_second_x_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(Nb_obs))+
+  ggplot2::geom_blank()+
+  ggplot2::theme_classic()+
+  ggplot2::scale_x_continuous(name="Number of observed dimensions",
+                              expand = c(0, 0),
+                              breaks=c(0, 3, 6, 9, 12, 15),
+                              limits=c(min(SR_pc$Nb_obs), max(SR_pc$Nb_obs)))+
+  ggplot2::theme(aspect.ratio=0.1,
+                 panel.background = ggplot2::element_rect(fill='transparent'),
+                 plot.background = ggplot2::element_rect(fill='transparent', color=NA),
+                 text=ggplot2::element_text(size = 13),
+                 axis.text=ggplot2::element_text(size=10),
+                 axis.line.x=element_line(colour = "deeppink3"),
+                 axis.ticks.x=ggplot2::element_line(colour="deeppink3"),
+                 axis.text.x=ggplot2::element_text(colour="deeppink3"),
+                 axis.title.x=ggplot2::element_text(colour="deeppink3"),
+                 axis.line.y=ggplot2::element_blank(),
+                 axis.text.y=ggplot2::element_blank(),
+                 axis.ticks.y=ggplot2::element_blank(),
+                 axis.title.y=ggplot2::element_blank(),
+                 panel.grid.minor.y=ggplot2::element_blank(),
+                 panel.grid.major.y=ggplot2::element_blank(),
+                 plot.margin = ggplot2::margin(l = 36,
+                                               r = 25,
+                                               t = 0,
+                                               b = 0))
+
+pc_second_y_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(y=Nb_obs))+
+  ggplot2::geom_blank()+
+  ggplot2::theme_classic()+
+  ggplot2::scale_y_continuous(name="Number of unobserved dimensions",
+                              expand = c(0, 0),
+                              breaks=c(0, 3, 6, 9, 12, 15),
+                              limits=c(min(SR_pc$Nb_obs), max(SR_pc$Nb_obs)))+
+  ggplot2::theme(aspect.ratio=1,
+                 panel.background = ggplot2::element_rect(fill='transparent'),
+                 plot.background = ggplot2::element_rect(fill='transparent', color=NA),
+                 text=ggplot2::element_text(size = 13),
+                 axis.text=ggplot2::element_text(size=10),
+                 axis.line.y=element_line(colour = "deeppink3"),
+                 axis.ticks.y=ggplot2::element_line(colour="deeppink3"),
+                 axis.text.y=ggplot2::element_text(colour="deeppink3"),
+                 axis.title.y=ggplot2::element_text(colour="deeppink3"),
+                 axis.line.x=ggplot2::element_blank(),
+                 axis.text.x=ggplot2::element_blank(),
+                 axis.ticks.x=ggplot2::element_blank(),
+                 axis.title.x=ggplot2::element_blank(),
+                 panel.grid.minor.x=ggplot2::element_blank(),
+                 panel.grid.major.x=ggplot2::element_blank(),
+                 plot.margin = ggplot2::margin(l = 0,
+                                               r = 0,
+                                               t = 0,
+                                               b = 0))
+
 pb_dist <- ggpubr::ggarrange(pb, p_dist, nrow=1, ncol=2, widths=c(4,1))
-fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc, nrow=2, ncol=1, labels=c("", "C"))
+
+pc_axes <-cowplot::ggdraw()+
+  cowplot::draw_plot(pc, y=0.1, scale=0.8)+
+  cowplot::draw_plot(pc_second_x_axis, x = 0.025, y = -0.35, scale=0.37)+
+  cowplot::draw_plot(pc_second_y_axis, x = -0.11, y = 0.155, scale=0.57)
+
+#fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc, nrow=2, ncol=1, labels=c("", "C"))
+fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc_axes, nrow=2, ncol=1, labels=c("", "C"))
+
 ggplot2::ggsave(fig, filename=here::here("outputs", "Fig_conceptual.png"),
-                width=20, height=20, units="cm", dpi=300)
+                width=20, height=20, units="cm", dpi=300, bg="white")
