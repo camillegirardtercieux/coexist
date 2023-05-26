@@ -192,7 +192,9 @@ pc<-data.frame(x = SR_pc$sIV,
         legend.direction="horizontal",
         axis.title = element_text(size = 15),
         axis.text = element_text(size = 10),
-        strip.text = element_text(size = 10))
+        strip.text = element_text(size = 10),
+        plot.margin = ggplot2::margin(l = 35,
+                                      b = 35))
 
 pc_second_x_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(Nb_obs))+
   ggplot2::geom_blank()+
@@ -215,16 +217,12 @@ pc_second_x_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(Nb_obs))+
                  axis.ticks.y=ggplot2::element_blank(),
                  axis.title.y=ggplot2::element_blank(),
                  panel.grid.minor.y=ggplot2::element_blank(),
-                 panel.grid.major.y=ggplot2::element_blank(),
-                 plot.margin = ggplot2::margin(l = 36,
-                                               r = 25,
-                                               t = 0,
-                                               b = 0))
+                 panel.grid.major.y=ggplot2::element_blank())
 
 pc_second_y_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(y=Nb_obs))+
   ggplot2::geom_blank()+
   ggplot2::theme_classic()+
-  ggplot2::scale_y_continuous(name="Number of unobserved dimensions",
+  ggplot2::scale_y_continuous(name="Number of \n unobserved dimensions",
                               expand = c(0, 0),
                               breaks=c(0, 3, 6, 9, 12, 15),
                               limits=c(min(SR_pc$Nb_obs), max(SR_pc$Nb_obs)))+
@@ -242,21 +240,16 @@ pc_second_y_axis <- ggplot2::ggplot(SR_pc, ggplot2::aes(y=Nb_obs))+
                  axis.ticks.x=ggplot2::element_blank(),
                  axis.title.x=ggplot2::element_blank(),
                  panel.grid.minor.x=ggplot2::element_blank(),
-                 panel.grid.major.x=ggplot2::element_blank(),
-                 plot.margin = ggplot2::margin(l = 0,
-                                               r = 0,
-                                               t = 0,
-                                               b = 0))
+                 panel.grid.major.x=ggplot2::element_blank())
 
 pb_dist <- ggpubr::ggarrange(pb, p_dist, nrow=1, ncol=2, widths=c(4,1))
 
-pc_axes <-cowplot::ggdraw()+
-  cowplot::draw_plot(pc, y=0.1, scale=0.8)+
-  cowplot::draw_plot(pc_second_x_axis, x = 0.025, y = -0.35, scale=0.37)+
-  cowplot::draw_plot(pc_second_y_axis, x = -0.11, y = 0.155, scale=0.57)
+pc_axes <-cowplot::ggdraw(pc)+
+  cowplot::draw_plot(pc_second_x_axis, x = 0.065, y = -0.42, scale=0.355)+
+  cowplot::draw_plot(pc_second_y_axis, x = -0.09, y = 0.11, scale=0.72)
 
 #fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc, nrow=2, ncol=1, labels=c("", "C"))
-fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc_axes, nrow=2, ncol=1, labels=c("", "C"))
+fig <- ggpubr::ggarrange(ggpubr::ggarrange(pa, pb_dist, nrow=1, ncol=2, labels=c("A", "B")), pc_axes, nrow=2, ncol=1, labels=c("", "C"), heights = c(0.9, 1))
 
 ggplot2::ggsave(fig, filename=here::here("outputs", "Fig_conceptual.png"),
                 width=20, height=20, units="cm", dpi=300, bg="white")
